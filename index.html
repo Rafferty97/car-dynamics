@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Car dynamics</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" />
+
+    <script>
+      const scale = 12
+
+      const canvas = document.getElementById('canvas')
+      const ctx = canvas.getContext('2d')
+
+      function len(vec) {
+        return Math.sqrt(Math.pow(vec[0], 2) + Math.pow(vec[1], 2))
+      }
+      
+      function len2(vec) {
+        return Math.pow(vec[0], 2) + Math.pow(vec[1], 2)
+      }
+
+      function norm(vec) {
+        const len_ = len(vec)
+        return [vec[0] / len_, vec[1] / len_]
+      }
+
+      function sub(a, b) {
+        return [a[0] - b[0], a[1] - b[1]]
+      }
+
+      function add(a, b) {
+        return [a[0] + b[0], a[1] + b[1]]
+      }
+
+      function mul(a, b) {
+        return [a * b[0], a * b[1]]
+      }
+
+      function dot(a, b) {
+        return a[0] * b[0] + a[1] * b[1]
+      }
+
+      class Car {
+        constructor (position, direction, x1, x2, x3, width) {
+          this.x1 = x1
+          this.y1 = -0.5 * width
+          this.width = width
+          this.length = x3 - x1
+          this.rad_ = -x2
+          this.pos_ = position
+          this.dir_ = direction
+        }
+
+        set position (position) {
+          // if (len2(sub(position, this.pos_)) < 0.05) return
+
+          const r = this.rad_
+          const base = add(this.pos_, mul(-r, this.dir_))
+          const diff = sub(position, base)
+          const h = (len2(diff) - Math.pow(r, 2)) / (2 * (r + dot(diff, this.dir_)))
+          const b = add(base, mul(h, this.dir_))
+          
+          this.dir_ = norm(sub(position, b))
+          this.pos_ = position
+        }
+        
+        getPosition (x) {
+          return add(this.pos_, mul(x, this.dir_))
+        }
+
+        draw (ctx) {
+          ctx.save()
+          ctx.translate(this.pos_[0], this.pos_[1])
+          ctx.transform(this.dir_[0], this.dir_[1], -this.dir_[1], this.dir_[0], 0, 0)
+          ctx.fillStyle = '#444'
+          ctx.beginPath()
+          ctx.rect(this.x1, this.y1, this.length, this.width)
+          ctx.fill()
+          ctx.fillStyle = '#d88'
+          ctx.beginPath()
+          ctx.rect(-this.rad_ - 0.4, this.y1, 0.8, 0.4)
+          ctx.rect(-this.rad_ - 0.4, -this.y1 - 0.4, 0.8, 0.4)
+          ctx.fill()
+          ctx.restore()
+        }
+      }
+
+      // const car = new Car([50, 50], [1, 0], -2.5, -1.35, 2.5, 2)
+      const car = new Car([50, 50], [1, 0], -8, -6, 0, 2)
+      const car2 = new Car([50, 50], [1, 0], -8, -6, 0, 2)
+      const car3 = new Car([50, 50], [1, 0], -8, -6, 0, 2)
+      const car4 = new Car([50, 50], [1, 0], -8, -6, 0, 2)
+
+      const draw = () => {
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+        ctx.save()
+        ctx.scale(scale, scale)
+        ctx.clearRect(0, 0, 5000, 5000)
+        car.draw(ctx)
+        car2.draw(ctx)
+        car3.draw(ctx)
+        // car4.draw(ctx)
+        ctx.restore()
+        requestAnimationFrame(draw)
+      }
+      requestAnimationFrame(draw)
+
+      window.addEventListener('mousemove', ev => {
+        car.position = [ev.pageX / scale, ev.pageY / scale]
+        car2.position = car.getPosition(-8.5)
+        car3.position = car2.getPosition(-8.5)
+        car4.position = car3.getPosition(-8.5)
+      })
+    </script>
+  </body>
+</html>
